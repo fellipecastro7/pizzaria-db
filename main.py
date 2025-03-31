@@ -14,12 +14,15 @@ def menu():
         print("6. Remover Pedido")
         print("7. Ver Todos os Pedidos")
         print("8. Ver Cardápio")
-        print("9. Sair")
+        print("9. Adicionar cliente")
+        print("10. Consultar cliente pelo nome")
+        print("11. Sair")
         
         escolha = input("Escolha uma opção: ").strip()
         
         cardapioVazio = len(banco.consultarCardapio()) == 0
         pedidosVazio = len(banco.consultarTodosPedidos()) == 0
+        clienteVazio = len(banco.consultarTodosClientes()) == 0
 
         if escolha == "1":
             nome = input("Digite o nome do item: ").strip()
@@ -66,9 +69,16 @@ def menu():
                 print(banco.removerItemCardapio(int(item_id)))
 
         elif escolha == "3":
-            if cardapioVazio:
-                print("Não há itens no cardápio para criar um pedido.")
+            if cardapioVazio or clienteVazio:
+                print("Não há itens no cardápio para criar um pedido ou sem clientes cadastrados.")
             else:
+                clientes = banco.consultarTodosClientes()
+                #print("Digite o id de um cliente para seleciona-lo")
+                for cliente in clientes:
+                    print(f"Id: {cliente['id']} Nome: {cliente['nome']} CPF {cliente['cpf']}")
+
+                cliente_id = int(input("Digite o id de um cliente para seleciona-lo como dono da compra "))
+
                 cardapio = banco.consultarCardapio()
                 print("\nCardápio:")
                 for item in cardapio:
@@ -92,7 +102,7 @@ def menu():
                     else:
                         print("Item não encontrado no cardápio.")
 
-                print(banco.criarPedido(pedido, total))
+                print(banco.criarPedido(pedido, total, cliente_id))
 
         elif escolha == "4":
             if pedidosVazio:
@@ -153,7 +163,8 @@ def menu():
                 pedidos = banco.consultarTodosPedidos()
                 print("\nPedidos Atuais:")
                 for pedido in pedidos:
-                    print(f"ID: {pedido['id']} - Status: {pedido['status']} - Total: R$ {pedido['valorTotal']} - Data: {formatar_data_hora()}")
+                    client = banco.selecionarClienteId(pedido['cliente_id'])
+                    print(f"ID: {pedido['id']} - Status: {pedido['status']} - Total: R$ {pedido['valorTotal']} - Data: {formatar_data_hora()} - Cliente: {client['nome']}")
 
         elif escolha == "8":
             if cardapioVazio:
@@ -165,6 +176,19 @@ def menu():
                     print(f"{item['id']}: {item['nome']} ({item['tamanho']}) - R$ {item['preco']}")
 
         elif escolha == "9":
+            nome = str(input("Qual o nome do cliente?"))
+            cpf = str(input("Qual o CPF do cliente? "))
+
+            print(banco.adicionarCliente(nome, cpf))
+
+        elif escolha == "10":
+            nome = str(input("Qual o nome do cliente? "))
+            cliente = banco.selecionarClienteNome(nome)
+
+            print(f"Nome do cliente: {cliente["nome"]}")
+
+
+        elif escolha == "11":
             banco.fechar_conexao()
             print("Saindo...")
             break

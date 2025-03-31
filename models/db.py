@@ -7,6 +7,16 @@ class PizzariaDB:
     def __init__(self):
         self.conn = sqlite3.connect(":memory:")
         self.cursor = self.conn.cursor()
+        self.cursor.execute("PRAGMA foreign_keys = ON;")
+
+
+        self.cursor.execute('''
+    CREATE TABLE IF NOT EXISTS clientes (
+        id INTEGER PRIMARY KEY,
+        nome TEXT,
+        cpf TEXT
+    )
+''')
         
         self.cursor.execute('''
             CREATE TABLE IF NOT EXISTS pedidos (
@@ -14,7 +24,9 @@ class PizzariaDB:
                 itens TEXT,
                 valorTotal REAL,
                 status TEXT,
-                data_hora TEXT
+                data_hora TEXT,
+                cliente_id INTEGER,
+                FOREIGN KEY (cliente_id) REFERENCES clientes(id)
             )
         ''')
 
@@ -27,6 +39,14 @@ class PizzariaDB:
                 preco REAL
             )
         ''')
+        self.cursor.execute('''
+            CREATE TABLE IF NOT EXISTS hist_pedidos(
+                id INTEGER PRIMARY KEY,
+                cliente_id INTEGER,
+                FOREIGN KEY (cliente_id) REFERENCES clientes(id)
+            )
+        ''')
+
 
         self.conn.commit()
 
@@ -64,12 +84,12 @@ class PizzariaDB:
         return "Item não encontrado no cardápio."
 
 
-    def criarPedido(self, itens, valor_total):
+    def criarPedido(self, itens, valor_total, cliente_id):
         data_hora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.cursor.execute('''
-            INSERT INTO pedidos (itens, valorTotal, status, data_hora)
-            VALUES (?, ?, ?, ?)
-        ''', (', '.join(itens), valor_total, "preparando", data_hora))
+            INSERT INTO pedidos (itens, valorTotal, status, data_hora, cliente_id)
+            VALUES (?, ?, ?, ?,?)
+        ''', (', '.join(itens), valor_total, "preparando", data_hora, cliente_id))
         self.conn.commit()
         return "Pedido criado com sucesso."
 
@@ -85,7 +105,7 @@ class PizzariaDB:
     def consultarTodosPedidos(self):
         self.cursor.execute('SELECT * FROM pedidos')
         pedidos = self.cursor.fetchall()
-        return [{"id": pedido[0], "itens": pedido[1], "valorTotal": pedido[2], "status": pedido[3], "data_hora": pedido[4]} for pedido in pedidos]
+        return [{"id": pedido[0], "itens": pedido[1], "valorTotal": pedido[2], "status": pedido[3], "data_hora": pedido[4], "cliente_id": pedido[5]} for pedido in pedidos]
 
 
     def atualizarStatus(self, pedido_id, novo_status):
@@ -98,3 +118,29 @@ class PizzariaDB:
         self.cursor.execute('DELETE FROM pedidos WHERE id = ?', (pedido_id,))
         self.conn.commit()
         return f"Pedido {pedido_id} removido."
+    
+    def adicionarCliente(self, nome, cpf):
+        self.cursor.execute("INSERt INTO clientes ( nome, cpf) values (?,?)", (nome, cpf))
+        client_id = self.cursor.lastrowid
+
+        self.cursor.execute("INSERT INTO hist_pedidos (cliente_id) VALUES (?)", (client_id,))
+
+        self.conn.commit()
+
+        return "Cliente cadastrado"
+    
+    def selecionarClienteNome(self, nome_cliente):
+        self.cursor.execute('SELECT * FROM clientes WHERE nome = ?', (nome_cliente,))
+        cliente = self.cursor.fetchone()
+        return {"id": cliente[0], "nome": cliente[1], "cpf" : cliente[2]}
+    
+    def selecionarClienteId(self, id_cliente):
+        self.cursor.execute('SELECT * FROM clientes WHERE id = ?', (id_cliente,))
+        cliente = self.cursor.fetchone()
+        return {"id": cliente[0], "nome": cliente[1], "cpf" : cliente[2]}
+    
+    
+    def consultarTodosClientes(self,):
+        self.cursor.execute('SELECT * FROM clientes')
+        clientes = self.cursor.fetchall()
+        return [{"id": cliente[0], "nome": cliente[1], "cpf": cliente[2]} for cliente in clientes]
