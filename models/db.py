@@ -144,3 +144,8 @@ class PizzariaDB:
         self.cursor.execute('SELECT * FROM clientes')
         clientes = self.cursor.fetchall()
         return [{"id": cliente[0], "nome": cliente[1], "cpf": cliente[2]} for cliente in clientes]
+    
+    def consultarPedidosCliente(self, id_cliente):
+        self.cursor.execute('SELECT * FROM pedidos WHERE cliente_id = ?', (id_cliente,))
+        pedidos = self.cursor.fetchall()
+        return [{"id": pedido[0], "itens": pedido[1], "valorTotal": pedido[2], "status": pedido[3], "data_hora": pedido[4], "cliente_id": pedido[5]} for pedido in pedidos]

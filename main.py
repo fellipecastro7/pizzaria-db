@@ -15,7 +15,7 @@ def menu():
         print("7. Ver Todos os Pedidos")
         print("8. Ver Cardápio")
         print("9. Adicionar cliente")
-        print("10. Consultar cliente pelo nome")
+        print("10. Consultar pedidos de um cliente")
         print("11. Sair")
         
         escolha = input("Escolha uma opção: ").strip()
@@ -182,12 +182,16 @@ def menu():
             print(banco.adicionarCliente(nome, cpf))
 
         elif escolha == "10":
-            nome = str(input("Qual o nome do cliente? "))
-            cliente = banco.selecionarClienteNome(nome)
-
-            print(f"Nome do cliente: {cliente["nome"]}")
-
-
+            clientes = banco.consultarTodosClientes()
+            #print("Digite o id de um cliente para seleciona-lo")
+            for cliente in clientes:
+                print(f"Id: {cliente['id']} Nome: {cliente['nome']} CPF {cliente['cpf']}")
+            id_cliente = input("Qual id do cliente: ")
+            pedidos_cliente = banco.consultarPedidosCliente(id_cliente)
+            print(f"Pedidos realizados pelo cliente: ")
+            for pedido in pedidos_cliente:
+                client = banco.selecionarClienteId(pedido['cliente_id'])
+                print(f"ID: {pedido['id']} - Status: {pedido['status']} - Total: R$ {pedido['valorTotal']} - Data: {formatar_data_hora()} - Cliente: {client['nome']}")
         elif escolha == "11":
             banco.fechar_conexao()
             print("Saindo...")
